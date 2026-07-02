@@ -145,8 +145,7 @@ main {
   flex-direction: column;
   gap: 18px;
   width: 100%;
-  max-width: 860px;
-  margin: 12px auto 0;
+  margin: 12px 0 0;
   padding: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
