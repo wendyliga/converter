@@ -19,14 +19,14 @@ npm run dev        # start the Vite dev server
 npm run lint       # oxlint
 npm run typecheck  # tsc
 npm test           # vitest unit tests
-npm run build      # production build into dist/
+npm run build      # production build into dist/ (excludes local sample assets)
 ```
 
 `./server.sh` installs dependencies if needed and starts the dev server.
 
 ## Deployment
 
-`npm run build` outputs a static site into `dist/`. The Vite `base` is relative (`./`), so the build works on GitHub Pages (including project-site subpaths) or any static host — just serve the `dist/` folder.
+`npm run build` outputs a static site into `dist/` and excludes the local `sample/` test assets from the shipped output. The Vite `base` is relative (`./`), so the build works on GitHub Pages (including project-site subpaths) or any static host — just serve the `dist/` folder.
 
 ## Architecture
 

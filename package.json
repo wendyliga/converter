@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "./build.sh",
+    "build:site": "tsc -b && vite build",
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "test": "vitest run",
