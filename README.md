@@ -43,3 +43,7 @@ npm run build
 ```
 
 The build uses a relative Vite base (`./`), so it works from a domain root, a GitHub Pages project path such as `/converter/`, or another static subdirectory.
+
+## License
+
+See [LICENSE](LICENSE).
