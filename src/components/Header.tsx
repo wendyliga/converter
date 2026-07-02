@@ -1,4 +1,5 @@
 import { ThemeToggle } from './ThemeToggle'
+import { githubRepoUrl } from '../core/buildInfo'
 
 export function Header() {
   return (
@@ -29,7 +30,7 @@ export function Header() {
           <div className="nav-actions">
             <a
               className="icon-button"
-              href="https://github.com/wendyliga/converter"
+              href={githubRepoUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View source on GitHub"

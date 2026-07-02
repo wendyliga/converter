@@ -6,6 +6,7 @@ import { Header } from './components/Header'
 import { OutputFormatSelector } from './components/OutputFormatSelector'
 import { QualitySlider } from './components/QualitySlider'
 import { ResizePanel } from './components/ResizePanel'
+import { buildHref, buildVersion } from './core/buildInfo'
 import { canEncode } from './core/browserSupport'
 import { convertImage } from './core/convertImage'
 import { detectFileType, FORMAT_LABELS, SUPPORTED_INPUTS } from './core/detectFileType'
@@ -451,7 +452,15 @@ function App() {
       <footer className="site-footer">
         <div className="shell-inner footer-inner">
           <span>Converter</span>
-          <span>No upload · No account · No server processing</span>
+          <a
+            className="footer-link"
+            href={buildHref}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>Build</span>
+            <span className="footer-build-pill">{buildVersion}</span>
+          </a>
         </div>
       </footer>
     </div>
