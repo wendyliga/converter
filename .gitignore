@@ -24,7 +24,6 @@ dist-ssr
 *.sw?
 
 # Local sample images (kept locally, not committed)
-sample/
 public/sample
 
 # Local Claude Code skill-tooling state
