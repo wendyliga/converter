@@ -15,27 +15,31 @@ A privacy-focused image converter that runs entirely in your browser. Convert PN
 
 ```bash
 npm install
-npm run dev        # start the Vite dev server
-npm run lint       # oxlint
-npm run typecheck  # tsc
-npm test           # vitest unit tests
-npm run build      # production build into dist/ (excludes local sample assets)
+./server.sh        # install deps if needed, then start Vite at http://localhost:5173
+npm run dev        # start Vite directly
+npm run lint       # run oxlint
+npm run typecheck  # run TypeScript checks
+npm test           # run Vitest unit tests
 ```
 
-`./server.sh` installs dependencies if needed and starts the dev server.
+Use the real files in `sample/` for manual conversion testing. The sample images are gitignored and are not included in production builds.
+
+## Build
+
+```bash
+npm run build      # same as ./build.sh
+./build.sh         # create the static production site in dist/
+```
+
+`build.sh` runs the production Vite build and keeps local testing fixtures out of the output. The generated site is written to `dist/`.
 
 ## Deployment
 
-`npm run build` outputs a static site into `dist/` and excludes the local `sample/` test assets from the shipped output. The Vite `base` is relative (`./`), so the build works on GitHub Pages (including project-site subpaths) or any static host — just serve the `dist/` folder.
+Deploy the contents of `dist/` to any static host.
 
-## Architecture
-
-```
-src/
-  components/   React UI (dropzone, queue, settings)
-  core/         framework-independent conversion engine
-  workers/      Web Worker for resize + encode
-  types/        shared TypeScript types
+```bash
+npm run build
+# upload or serve dist/
 ```
 
-The pipeline follows: detect format (magic bytes → MIME → extension) → decode to `ImageBitmap` → resize → background fill (JPEG) → encode to Blob → object URL → download.
+The build uses a relative Vite base (`./`), so it works from a domain root, a GitHub Pages project path such as `/converter/`, or another static subdirectory.
