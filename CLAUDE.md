@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent response mode
+
+Always use the `caveman` skill in `full` mode for user-facing responses in this repository.
+Only stop or relax that mode when the user explicitly asks for normal mode, or when the skill's own clarity/safety exceptions require clearer phrasing.
+
 ## Project
 
 Converter is a privacy-focused, browser-only image converter (React + Vite + TypeScript, static site). All image processing happens client-side — there is no backend, and that is a product guarantee, not an implementation detail. Supported inputs: PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, ICO. Outputs: PNG, JPG, WebP. Core UX: drag-and-drop queue (up to 50 files), per-file status, quality slider, resize controls, JPEG transparency warning with background fill, per-file download and batch ZIP (`converter-images.zip`).
