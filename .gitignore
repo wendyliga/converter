@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local sample images (kept locally, not committed)
+sample/
+public/sample
+
+# Local Claude Code skill-tooling state
+skills-lock.json

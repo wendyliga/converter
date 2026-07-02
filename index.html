@@ -2,9 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>converter-vite-scaffold</title>
+    <title>Image Converter — Convert PNG, JPG, WebP Privately in Your Browser</title>
+    <meta
+      name="description"
+      content="Free private image converter. Convert PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, and ICO directly in your browser — no upload, no account, no server processing."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Converter" />
+    <meta property="og:title" content="Convert images privately in your browser" />
+    <meta
+      property="og:description"
+      content="Convert PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, and ICO without uploading files to a server."
+    />
+    <meta name="twitter:card" content="summary" />
+    <script>
+      // Resolve the theme before first paint: saved choice, else system preference.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('converter-theme')
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.dataset.theme = theme
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

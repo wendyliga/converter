@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "server",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["server.sh"],
+      "port": 5173
+    }
+  ]
+}

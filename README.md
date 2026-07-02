@@ -1,32 +1,41 @@
-# React + TypeScript + Vite
+# Converter
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A privacy-focused image converter that runs entirely in your browser. Convert PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, and ICO to PNG, JPG, or WebP — no upload, no account, no server processing.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **100% local** — images are decoded, resized, and re-encoded with the browser's own canvas APIs; files never leave your device
+- **Batch conversion** — queue up to 50 files, convert sequentially, download individually or as a ZIP
+- **Quality control** — JPEG/WebP quality slider (PNG is lossless)
+- **Resize** — set width/height or max width/height, with aspect-ratio lock and no-upscale protection
+- **Transparency handling** — JPEG output warns about transparency loss and fills with a selectable background color
+- **Fast** — heavy raster work runs in a Web Worker with `OffscreenCanvas`; the HEIC (libheif WASM) and TIFF (UTIF.js) decoders are lazy-loaded chunks that download only when needed
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # start the Vite dev server
+npm run lint       # oxlint
+npm run typecheck  # tsc
+npm test           # vitest unit tests
+npm run build      # production build into dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`./server.sh` installs dependencies if needed and starts the dev server.
+
+## Deployment
+
+`npm run build` outputs a static site into `dist/`. The Vite `base` is relative (`./`), so the build works on GitHub Pages (including project-site subpaths) or any static host — just serve the `dist/` folder.
+
+## Architecture
+
+```
+src/
+  components/   React UI (dropzone, queue, settings)
+  core/         framework-independent conversion engine
+  workers/      Web Worker for resize + encode
+  types/        shared TypeScript types
+```
+
+The pipeline follows: detect format (magic bytes → MIME → extension) → decode to `ImageBitmap` → resize → background fill (JPEG) → encode to Blob → object URL → download.
