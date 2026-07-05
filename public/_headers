@@ -9,3 +9,8 @@
   Cache-Control: no-cache
 /
   Cache-Control: no-cache
+
+# Link-preview crawlers should be able to fetch the social card reliably while
+# still seeing updates within a day after deploy.
+/og-image.png
+  Cache-Control: public, max-age=86400
