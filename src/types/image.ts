@@ -1,3 +1,5 @@
+import type { ExifSummary } from '../core/exifTiff'
+
 export type OutputFormat = 'png' | 'jpeg' | 'webp'
 
 export type ImageInputType =
@@ -31,11 +33,20 @@ export type ResizeOptions = {
   preventUpscale: boolean
 }
 
+export type MetadataOptions = {
+  // Off by default: the canvas re-encode already drops every tag, so keeping
+  // metadata is an explicit re-injection the user has to ask for.
+  keepMetadata: boolean
+  // Only meaningful while keepMetadata is on.
+  stripGps: boolean
+}
+
 export type ConversionOptions = {
   outputFormat: OutputFormat
   quality: number
   resize: ResizeOptions
   backgroundColor: string
+  metadata: MetadataOptions
 }
 
 export type ConversionResult = {
@@ -58,6 +69,7 @@ export type ImageFileItem = {
   height?: number
   hasTransparency?: boolean
   thumbnailUrl?: string
+  metadata?: ExifSummary
   status: ConversionStatus
   error?: string
   result?: ConversionResult

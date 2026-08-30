@@ -1,5 +1,9 @@
-import { useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
-import { FILE_INPUT_ACCEPT } from '../core/detectFileType'
+import { useRef, useState, type DragEvent, type MouseEvent } from 'react'
+import { FILE_INPUT_ACCEPT, FORMAT_LABELS, SUPPORTED_INPUTS } from '../core/detectFileType'
+import { MAX_BATCH_COUNT, MAX_FILE_BYTES } from '../core/limits'
+
+const FORMAT_LINE = SUPPORTED_INPUTS.map((format) => FORMAT_LABELS[format].toLowerCase()).join(' ')
+const LIMIT_LINE = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB/file · ${MAX_BATCH_COUNT} files`
 
 type DropzoneProps = { onFiles: (files: File[]) => void }
 
@@ -31,11 +35,11 @@ export function Dropzone({ onFiles }: DropzoneProps) {
     }
   }
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      openPicker()
-    }
+  // The button is the keyboard-reachable control, so the surrounding area only
+  // adds a mouse convenience — nesting two focusable controls would be worse.
+  const handleButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    openPicker()
   }
 
   return (
@@ -52,35 +56,27 @@ export function Dropzone({ onFiles }: DropzoneProps) {
       />
       <div
         className={`dropzone${isDragging ? ' is-dragging' : ''}`}
-        role="button"
-        tabIndex={0}
-        aria-label="Add images: drop files here or press Enter to browse"
+        role="group"
+        aria-label="Add images by dropping them here or choosing files"
         onClick={openPicker}
-        onKeyDown={handleKeyDown}
         onDragEnter={handleDragOver}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <span className="dropzone-icon" aria-hidden="true">
-          <svg
-            viewBox="0 0 24 24"
-            width="22"
-            height="22"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 16V4M7 9l5-5 5 5" />
-            <path d="M4 20h16" />
-          </svg>
-        </span>
-        <p className="dropzone-title">Drop images here or choose files</p>
-        <p className="dropzone-hint">
-          PNG · JPG · WebP · AVIF · HEIC · TIFF · SVG · BMP · ICO — up to 50 MB each
-        </p>
+        <div className="dropzone-copy">
+          <p className="dropzone-title">Drop images, or</p>
+          <p className="dropzone-spec">
+            {FORMAT_LINE} · {LIMIT_LINE}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary dropzone-button"
+          onClick={handleButtonClick}
+        >
+          Choose files
+        </button>
       </div>
     </>
   )

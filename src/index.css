@@ -1,57 +1,131 @@
+/* IBM Plex Mono is self-hosted rather than loaded from Google Fonts: the app
+   makes no network request after load, and a webfont CDN would leak the
+   visitor's IP and referer on every visit. Latin subset only, 400/500/600. */
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
+
+/* The Google latin subset drops U+2192, which the queue uses for every
+   "HEIC → PNG" line. These are ~1 KB single-glyph cuts of the real IBM Plex
+   Mono, listed ahead of the family so only the arrow comes from them. */
+@font-face {
+  font-family: 'IBM Plex Mono Arrow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/ibm-plex-mono-arrow-400.woff2') format('woff2');
+  unicode-range: U+2192;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono Arrow';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/ibm-plex-mono-arrow-500.woff2') format('woff2');
+  unicode-range: U+2192;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono Arrow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/ibm-plex-mono-arrow-600.woff2') format('woff2');
+  unicode-range: U+2192;
+}
+
 :root {
   color-scheme: light;
 
-  --bg: #f4f5f8;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono Arrow', 'IBM Plex Mono', ui-monospace, monospace;
+
+  --shell-max: 1060px;
+
+  --bg: #fbfbfa;
   --surface: #ffffff;
-  --surface-muted: #eef0f4;
-  --border: #e2e5ec;
-  --border-strong: #c9cedb;
-  --text: #181b25;
-  --text-muted: #5c6373;
+  --surface-2: #f6f6f4;
+  --surface-3: #f1f1ef;
 
-  --accent: #4f46e5;
-  --accent-strong: #4338ca;
-  --accent-soft: rgba(79, 70, 229, 0.1);
-  --accent-contrast: #ffffff;
+  --titlebar: #22252a;
+  --titlebar-border: #3b3f45;
+  --titlebar-mark: #565b62;
+  --titlebar-text: #e7e8e6;
+  --titlebar-dim: #9aa0a7;
 
-  --success: #15803d;
-  --success-soft: rgba(22, 163, 74, 0.12);
-  --danger: #b42318;
-  --danger-soft: rgba(217, 45, 32, 0.1);
-  --warning-text: #7a4d0b;
-  --warning-soft: rgba(247, 144, 9, 0.12);
-  --warning-border: rgba(247, 144, 9, 0.4);
+  --border: #cfd1cf;
+  --border-input: #b9bcbb;
+  --border-subtle: #e7e7e4;
+  --border-subtle-2: #dcdedd;
 
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --radius-sm: 9px;
-  --shadow-card: 0 1px 2px rgb(16 18 27 / 5%), 0 16px 40px -12px rgb(16 18 27 / 12%);
+  --text: #14161a;
+  --text-2: #4a4f57;
+  /* One notch darker than the handoff's #6b7078: that value drops to 4.41:1
+     on --surface-3, and every use of this token carries information. */
+  --text-3: #696e76;
+  /* Decorative only — 3.4:1 on white. Anything that carries information uses
+     --text-3 (4.9:1) instead. */
+  --text-4: #8a909a;
+
+  --ink: #14161a;
+  --ink-hover: #2c3037;
+  --ink-text: #ffffff;
+  --segment-on: #22252a;
+  --segment-on-text: #ffffff;
+  --blue: #2b4fa8;
+  --green: #1f6b3a;
+
+  --warn-bg: #fffaf3;
+  --warn-bg-hover: #fdf3e6;
+  --warn-chip-bg: #fbe6d8;
+  --warn-border: #eec7ad;
+  --warn-text: #8f3c14;
+
+  --chip-bg: #eceeec;
+  --thumb-bg: #eceeec;
+  --thumb-stripe: #dcdedd;
+  --row-hover: #f6f6f4;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #101218;
-  --surface: #181b23;
-  --surface-muted: #20242f;
-  --border: #2a2f3c;
-  --border-strong: #3a4152;
-  --text: #e9ebf2;
-  --text-muted: #9aa2b5;
+  --bg: #16181b;
+  --surface: #1d2024;
+  --surface-2: #1a1d20;
+  --surface-3: #22252a;
 
-  --accent: #818cf8;
-  --accent-strong: #a5b0fc;
-  --accent-soft: rgba(129, 140, 248, 0.16);
-  --accent-contrast: #10121a;
+  --border: #33373d;
+  --border-input: #454a51;
+  --border-subtle: #2a2e33;
+  --border-subtle-2: #2a2e33;
 
-  --success: #4ade80;
-  --success-soft: rgba(74, 222, 128, 0.14);
-  --danger: #f97066;
-  --danger-soft: rgba(249, 112, 102, 0.14);
-  --warning-text: #fdb022;
-  --warning-soft: rgba(253, 176, 34, 0.12);
-  --warning-border: rgba(253, 176, 34, 0.4);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 16px 40px -12px rgb(0 0 0 / 50%);
+  --text: #e7e8e6;
+  --text-2: #b4b8bd;
+  --text-3: #9aa0a7;
+  --text-4: #82888f;
+
+  --ink: #e7e8e6;
+  --ink-hover: #ffffff;
+  --ink-text: #14161a;
+  --segment-on: #e7e8e6;
+  --segment-on-text: #14161a;
+  --blue: #7fa0e8;
+  --green: #6fbf8c;
+
+  --warn-bg: #2a2118;
+  --warn-bg-hover: #33291d;
+  --warn-chip-bg: #3d2c1c;
+  --warn-border: #5c4326;
+  --warn-text: #e0a273;
+
+  --chip-bg: #2a2e33;
+  --thumb-bg: #2a2e33;
+  --thumb-stripe: #3a3f45;
+  --row-hover: #23262b;
 }
 
 *,
@@ -60,25 +134,12 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   min-width: 320px;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  font-size: 16px;
-  line-height: 1.55;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -92,14 +153,22 @@ img {
 
 button,
 input,
+select,
 output {
   font: inherit;
   color: inherit;
 }
 
+input[type='range'],
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--blue);
+}
+
+/* The design has no border-radius, so the ring is square. */
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
 }
 
 .visually-hidden {
@@ -115,10 +184,6 @@ output {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {

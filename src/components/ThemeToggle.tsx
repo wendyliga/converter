@@ -26,12 +26,18 @@ export function ThemeToggle() {
   const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
 
   return (
-    <button type="button" className="icon-button" onClick={toggle} aria-label={label} title={label}>
+    <button
+      type="button"
+      className="titlebar-toggle"
+      onClick={toggle}
+      aria-label={label}
+      title={label}
+    >
       {theme === 'dark' ? (
         <svg
           viewBox="0 0 24 24"
-          width="18"
-          height="18"
+          width="13"
+          height="13"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -45,8 +51,8 @@ export function ThemeToggle() {
       ) : (
         <svg
           viewBox="0 0 24 24"
-          width="18"
-          height="18"
+          width="13"
+          height="13"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
