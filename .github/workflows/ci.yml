@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch supersedes the run in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Pinned to the active LTS rather than whatever the dev machine runs,
+          # so CI catches anything that depends on a newer runtime.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # build.sh is what actually deploys, so CI runs it rather than the bare
+      # vite build — it also covers the build-info env wiring.
+      - run: npm run build
+
+      # The HEIC decoder is ~3 MB of WASM. It and the TIFF decoder must only
+      # ever be reached through a dynamic import() in decodeImage.ts; a single
+      # static import anywhere would silently fold them into the entry chunk,
+      # which nothing else in the pipeline would complain about.
+      - name: Codec chunks must stay lazy
+        run: |
+          shopt -s nullglob
+          for codec in heicCodec tiffCodec; do
+            files=(dist/assets/$codec-*.js)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "::error::$codec is not a separate chunk — something now imports it statically."
+              exit 1
+            fi
+            echo "$codec: $(stat -c%s "${files[0]}") bytes (lazy)"
+          done
+
+          entry=(dist/assets/index-*.js)
+          size=$(stat -c%s "${entry[0]}")
+          echo "entry chunk: $size bytes"
+          if [ "$size" -gt 400000 ]; then
+            echo "::error::entry chunk is $size bytes, over the 400000 budget — check for a newly static-imported codec."
+            exit 1
+          fi

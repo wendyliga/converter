@@ -23,6 +23,8 @@ npm run typecheck  # run TypeScript checks
 npm test           # run Vitest unit tests
 ```
 
+Every pull request runs lint, typecheck, tests and a production build through `.github/workflows/ci.yml`, which also asserts the HEIC and TIFF decoders are still lazy-loaded chunks rather than folded into the main bundle.
+
 Use the real files in `sample/` for manual conversion testing. They are committed to the repo but are not included in production builds — only the `public/sample` symlink that serves them to the dev server is gitignored.
 
 ## Build
