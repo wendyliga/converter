@@ -26,7 +26,7 @@ npx vitest run src/core/resize.test.ts   # single test file
 
 `./og-image.sh` regenerates `public/og-image.png` from `public/og-image.svg` (headless Chromium + ImageMagick); the SVG embeds its own IBM Plex Mono subsets, and `favicon.svg`, the OG card and the app all share the squared outline glyph — no gradient mark survives anywhere.
 
-There is intentionally no CI workflow (removed by owner request). Run lint + typecheck + test locally before considering work done. Vite `base` is `'./'` (relative) so the build works on GitHub Pages project subpaths — don't change it to an absolute path.
+`.github/workflows/ci.yml` runs lint, typecheck, test and `npm run build` on every pull request and on pushes to `main`, plus a guard asserting the HEIC/TIFF decoders are still separate lazy chunks and the entry chunk is under 400 KB. Still run lint + typecheck + test locally before considering work done — CI is the backstop, not the loop. Vite `base` is `'./'` (relative) so the build works on GitHub Pages project subpaths — don't change it to an absolute path.
 
 ## Architecture
 
