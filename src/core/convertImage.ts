@@ -3,6 +3,7 @@ import type { WorkerRequest, WorkerResponse } from '../workers/workerMessages'
 import { renderToBlob, type RenderResult } from './canvasExport'
 import { decodeToBitmap } from './decodeImage'
 import { ConverterError, ERRORS } from './errors'
+import { applyExif, METADATA_WRITE_FORMATS, readSourceExif } from './exifMetadata'
 
 type PendingJob = {
   resolve: (result: RenderResult) => void
@@ -56,18 +57,54 @@ export async function convertImage(
   const bitmap = await decodeToBitmap(file, inputFormat)
   const activeWorker = getWorker()
 
-  if (activeWorker) {
-    return new Promise<RenderResult>((resolve, reject) => {
-      const id = ++requestSeq
-      pendingJobs.set(id, { resolve, reject })
-      const request: WorkerRequest = { id, bitmap, options }
-      activeWorker.postMessage(request, [bitmap])
-    })
-  }
+  const rendered = activeWorker
+    ? await new Promise<RenderResult>((resolve, reject) => {
+        const id = ++requestSeq
+        pendingJobs.set(id, { resolve, reject })
+        const request: WorkerRequest = { id, bitmap, options }
+        activeWorker.postMessage(request, [bitmap])
+      })
+    : await renderMainThread(bitmap, options)
 
+  return preserveMetadata(file, inputFormat, options, rendered)
+}
+
+async function renderMainThread(
+  bitmap: ImageBitmap,
+  options: ConversionOptions,
+): Promise<RenderResult> {
   try {
     return await renderToBlob(bitmap, options)
   } finally {
     bitmap.close()
   }
+}
+
+// Runs on the main thread rather than in the worker: the worker only ever
+// receives a transferred ImageBitmap and has no access to the source file, and
+// splicing here keeps the worker protocol frozen and gives the main-thread
+// fallback the same behavior for free.
+async function preserveMetadata(
+  file: File,
+  inputFormat: ImageInputType,
+  options: ConversionOptions,
+  rendered: RenderResult,
+): Promise<RenderResult> {
+  if (!options.metadata.keepMetadata) return rendered
+  if (!METADATA_WRITE_FORMATS.has(options.outputFormat)) return rendered
+
+  // Re-read rather than caching the block on the queue item, so raw metadata
+  // bytes never sit in React state for up to 50 files.
+  const tiff = await readSourceExif(file, inputFormat)
+  if (!tiff) return rendered
+
+  const blob = await applyExif(
+    rendered.blob,
+    options.outputFormat,
+    tiff,
+    rendered.width,
+    rendered.height,
+    options.metadata.stripGps,
+  )
+  return { ...rendered, blob }
 }

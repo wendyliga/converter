@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import { BackgroundPanel } from './components/BackgroundPanel'
 import { Dropzone } from './components/Dropzone'
 import { FileQueue } from './components/FileQueue'
 import { Header } from './components/Header'
 import { OutputFormatSelector } from './components/OutputFormatSelector'
+import { MetadataPanel } from './components/MetadataPanel'
 import { QualitySlider } from './components/QualitySlider'
 import { ResizePanel } from './components/ResizePanel'
 import { buildHref, buildVersion } from './core/buildInfo'
@@ -13,7 +15,6 @@ import { detectFileType, FORMAT_LABELS, SUPPORTED_INPUTS } from './core/detectFi
 import { probeFile } from './core/decodeImage'
 import { ERRORS, errorMessage } from './core/errors'
 import { buildOutputFilename } from './core/filename'
-import { formatBytes } from './core/formatBytes'
 import {
   MAX_BATCH_BYTES,
   MAX_BATCH_COUNT,
@@ -29,9 +30,23 @@ const DEFAULT_OPTIONS: ConversionOptions = {
   quality: 85,
   resize: { mode: 'original', preserveAspectRatio: true, preventUpscale: true },
   backgroundColor: '#ffffff',
+  // Stripping is the default, and this is deliberately not persisted: a setting
+  // that decides whether GPS coordinates leave in your files should not survive
+  // a session without the user asking for it again.
+  metadata: { keepMetadata: false, stripGps: true },
 }
 
 const CONVERTIBLE = new Set<ConversionStatus>(['ready', 'done', 'cancelled'])
+
+// Every number in the spec footer comes from core/limits.ts, never a literal.
+const MEGABYTE = 1024 * 1024
+const INPUT_LABELS = SUPPORTED_INPUTS.map((format) => FORMAT_LABELS[format].toLowerCase())
+const LIMIT_LINES = [
+  `${Math.round(MAX_FILE_BYTES / MEGABYTE)} MB per file`,
+  `${Math.round(MAX_BATCH_BYTES / MEGABYTE)} MB per batch`,
+  `${MAX_BATCH_COUNT} files at once`,
+  `${MAX_DIMENSION.toLocaleString('en-US')} px / ${Math.round(MAX_PIXELS / 1_000_000)} MP`,
+]
 
 function App() {
   const [items, setItems] = useState<ImageFileItem[]>([])
@@ -106,6 +121,7 @@ function App() {
         height: probe.height,
         hasTransparency: probe.hasTransparency,
         thumbnailUrl: probe.thumbnailUrl,
+        metadata: probe.metadata,
       })
     } catch (err) {
       patchItem(stub.id, { status: 'failed', inputFormat, error: errorMessage(err) })
@@ -229,237 +245,127 @@ function App() {
     }
   }
 
-  const totalBytes = items.reduce((sum, item) => sum + item.sizeBytes, 0)
   const convertibleCount = items.filter((item) => CONVERTIBLE.has(item.status)).length
-  const doneCount = items.filter((item) => item.status === 'done').length
-  const transparencyRisk =
-    options.outputFormat === 'jpeg' && items.some((item) => item.hasTransparency)
+  const transparencyRisk = items.some((item) => item.hasTransparency)
+  const filesWithGps = items.filter((item) => item.metadata?.hasGps).length
 
   return (
-    <div className="app-shell" id="top">
+    <div className="app">
       <Header />
+
       <main>
-        <section className="hero" aria-labelledby="hero-title">
-          <p className="hero-eyebrow">100% local · nothing leaves your device</p>
-          <h1 id="hero-title">Convert images privately in your browser.</h1>
-          <p className="hero-subtitle">
-            Convert PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, and ICO without uploading
-            files to a server. No account, no tracking, no waiting on uploads.
-          </p>
-        </section>
+        <div className="region-inner main-inner">
+          <div className="work-column">
+            <Dropzone onFiles={addFiles} />
 
-        <section className="converter-card" id="converter" aria-label="Image converter">
-          <Dropzone onFiles={addFiles} />
+            {notice && (
+              <p className="notice" role="status">
+                {notice}
+                <button
+                  type="button"
+                  className="notice-dismiss"
+                  onClick={() => setNotice(null)}
+                  aria-label="Dismiss message"
+                >
+                  ×
+                </button>
+              </p>
+            )}
 
-          {notice && (
-            <p className="queue-notice" role="status">
-              {notice}
-              <button
-                type="button"
-                className="notice-dismiss"
-                onClick={() => setNotice(null)}
-                aria-label="Dismiss message"
-              >
-                ×
-              </button>
-            </p>
-          )}
-
-          <div className="settings-grid">
-            <OutputFormatSelector
-              value={options.outputFormat}
-              webpSupported={webpSupported}
-              onChange={(outputFormat) => setOptions((prev) => ({ ...prev, outputFormat }))}
-            />
-            <QualitySlider
-              value={options.quality}
-              disabled={options.outputFormat === 'png'}
-              onChange={(quality) => setOptions((prev) => ({ ...prev, quality }))}
-            />
-            <ResizePanel
-              value={options.resize}
-              onChange={(resize) => setOptions((prev) => ({ ...prev, resize }))}
+            <FileQueue
+              items={items}
+              outputFormat={options.outputFormat}
+              convertibleCount={convertibleCount}
+              isConverting={isConverting}
+              isZipping={isZipping}
+              onRemove={removeItem}
+              onClear={clearQueue}
+              onConvert={convertAll}
+              onCancel={cancelConversion}
+              onDownloadZip={downloadZip}
             />
           </div>
 
-          {options.outputFormat === 'jpeg' && (
-            <div className={`background-row${transparencyRisk ? ' is-warning' : ''}`}>
-              {transparencyRisk && (
-                <p className="transparency-warning" role="alert">
-                  <strong>Heads up:</strong> JPEG does not support transparency. Transparent
-                  areas will be filled with the selected background color.
-                </p>
-              )}
-              <label className="background-picker">
-                Background for transparency
-                <input
-                  type="color"
+          <aside className="settings" aria-label="Conversion settings">
+            <div className="settings-bar">Settings</div>
+            <div className="settings-sections">
+              <OutputFormatSelector
+                value={options.outputFormat}
+                webpSupported={webpSupported}
+                onChange={(outputFormat) => setOptions((prev) => ({ ...prev, outputFormat }))}
+              />
+              <QualitySlider
+                value={options.quality}
+                disabled={options.outputFormat === 'png'}
+                onChange={(quality) => setOptions((prev) => ({ ...prev, quality }))}
+              />
+              <ResizePanel
+                value={options.resize}
+                onChange={(resize) => setOptions((prev) => ({ ...prev, resize }))}
+              />
+              {options.outputFormat === 'jpeg' && (
+                <BackgroundPanel
                   value={options.backgroundColor}
-                  onChange={(event) =>
-                    setOptions((prev) => ({ ...prev, backgroundColor: event.target.value }))
+                  transparencyRisk={transparencyRisk}
+                  onChange={(backgroundColor) =>
+                    setOptions((prev) => ({ ...prev, backgroundColor }))
                   }
                 />
-              </label>
-            </div>
-          )}
-
-          <FileQueue items={items} outputFormat={options.outputFormat} onRemove={removeItem} />
-
-          <div className="convert-bar">
-            <p className="convert-summary">
-              {items.length === 0
-                ? 'No images added yet'
-                : `${items.length} image${items.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}`}
-            </p>
-            <div className="convert-actions">
-              {items.length > 0 && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={clearQueue}
-                  disabled={isConverting}
-                >
-                  Clear all
-                </button>
               )}
-              {doneCount >= 2 && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={downloadZip}
-                  disabled={isZipping || isConverting}
-                >
-                  {isZipping ? 'Zipping…' : 'Download all (.zip)'}
-                </button>
-              )}
-              {isConverting && (
-                <button type="button" className="btn btn-secondary" onClick={cancelConversion}>
-                  Cancel
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={convertAll}
-                disabled={isConverting || convertibleCount === 0}
-              >
-                {isConverting
-                  ? 'Converting…'
-                  : convertibleCount > 1
-                    ? `Convert ${convertibleCount} images`
-                    : 'Convert'}
-              </button>
+              <MetadataPanel
+                value={options.metadata}
+                outputFormat={options.outputFormat}
+                totalFiles={items.length}
+                filesWithGps={filesWithGps}
+                onChange={(metadata) => setOptions((prev) => ({ ...prev, metadata }))}
+              />
             </div>
-          </div>
-        </section>
-
-        <section className="trust-grid" aria-label="Why Converter">
-          <article>
-            <h2>Private by design</h2>
-            <p>
-              Your images are processed locally in your browser and are not uploaded to our
-              server.
-            </p>
-          </article>
-          <article>
-            <h2>Fast and free</h2>
-            <p>No account, no queue, no upload wait. Conversion starts instantly on your device.</p>
-          </article>
-          <article>
-            <h2>Batch friendly</h2>
-            <p>
-              Queue up to {MAX_BATCH_COUNT} images, convert them in one click, and download
-              everything as a ZIP.
-            </p>
-          </article>
-        </section>
-
-        <section className="formats" id="formats" aria-labelledby="formats-title">
-          <h2 id="formats-title">Supported formats</h2>
-          <div className="formats-grid">
-            <div>
-              <h3>Input</h3>
-              <ul className="format-chips">
-                {SUPPORTED_INPUTS.map((format) => (
-                  <li key={format}>{FORMAT_LABELS[format]}</li>
-                ))}
-              </ul>
-              <p className="formats-note">
-                AVIF, BMP, and ICO support depends on your browser&apos;s built-in decoders.
-                HEIC and TIFF decoders load on demand the first time you add one.
-              </p>
-            </div>
-            <div>
-              <h3>Output</h3>
-              <ul className="format-chips">
-                <li>PNG — lossless, keeps transparency</li>
-                <li>JPG — small files, no transparency</li>
-                <li>WebP — modern and efficient</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section className="faq" id="faq" aria-labelledby="faq-title">
-          <h2 id="faq-title">Frequently asked questions</h2>
-          <div className="faq-grid">
-            <article>
-              <h3>Are my images uploaded anywhere?</h3>
-              <p>
-                No. Conversion runs entirely in your browser using its built-in image tools.
-                Files never leave your device.
-              </p>
-            </article>
-            <article>
-              <h3>Which conversions are supported?</h3>
-              <p>
-                PNG, JPG, WebP, AVIF, HEIC, TIFF, SVG, BMP, and ICO can be converted to PNG,
-                JPG, or WebP.
-              </p>
-            </article>
-            <article>
-              <h3>What are the limits?</h3>
-              <p>
-                Up to 50 MB per file, 200 MB per batch, {MAX_BATCH_COUNT} files at once, and
-                12,000 px or 100 megapixels per image.
-              </p>
-            </article>
-            <article>
-              <h3>Is metadata preserved?</h3>
-              <p>
-                No. EXIF data and color profiles are not preserved — which also means location
-                data is stripped from your photos.
-              </p>
-            </article>
-            <article>
-              <h3>Why is WebP disabled?</h3>
-              <p>
-                WebP export depends on your browser. If it can&apos;t encode WebP, the option is
-                disabled — PNG and JPG always work.
-              </p>
-            </article>
-            <article>
-              <h3>What about HEIC or TIFF?</h3>
-              <p>
-                Supported. iPhone HEIC photos and TIFF files decode locally with extra
-                decoders that download only when you add one, keeping the first load fast.
-              </p>
-            </article>
-          </div>
-        </section>
+          </aside>
+        </div>
       </main>
 
+      <section className="spec" aria-label="Reference">
+        <div className="region-inner spec-inner">
+          <div className="spec-column">
+            <h2>Input formats</h2>
+            <p className="spec-mono">
+              {INPUT_LABELS.slice(0, 4).join(' · ')}
+              <br />
+              {INPUT_LABELS.slice(4).join(' · ')}
+            </p>
+            <p className="spec-note">
+              AVIF/BMP/ICO depend on your browser. HEIC and TIFF decoders load on first use.
+            </p>
+          </div>
+          <div className="spec-column">
+            <h2>Output</h2>
+            <p className="spec-body">
+              <strong>png</strong> lossless, keeps alpha
+              <br />
+              <strong>jpg</strong> small, no alpha
+              <br />
+              <strong>webp</strong> efficient, never carries EXIF
+            </p>
+          </div>
+          <div className="spec-column">
+            <h2>Limits</h2>
+            <p className="spec-mono is-secondary">
+              {LIMIT_LINES.map((line, index) => (
+                <span key={line}>
+                  {index > 0 && <br />}
+                  {line}
+                </span>
+              ))}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <footer className="site-footer">
-        <div className="shell-inner footer-inner">
-          <span>Converter</span>
-          <a
-            className="footer-link"
-            href={buildHref}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span>Build</span>
-            <span className="footer-build-pill">{buildVersion}</span>
+        <div className="region-inner footer-inner">
+          <span>MIT licensed</span>
+          <a className="footer-link" href={buildHref} target="_blank" rel="noopener noreferrer">
+            build {buildVersion}
           </a>
         </div>
       </footer>

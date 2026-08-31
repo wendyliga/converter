@@ -14,7 +14,7 @@ type Props = {
 
 export function OutputFormatSelector({ value, webpSupported, onChange }: Props) {
   return (
-    <div className="control-block">
+    <div className="settings-section">
       <span className="control-label" id="output-format-label">
         Output format
       </span>
@@ -27,6 +27,7 @@ export function OutputFormatSelector({ value, webpSupported, onChange }: Props) 
               type="button"
               aria-pressed={value === choice.value}
               disabled={disabled}
+              title={disabled ? 'This browser cannot encode WebP.' : undefined}
               onClick={() => onChange(choice.value)}
             >
               {choice.label}

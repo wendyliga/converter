@@ -1,5 +1,7 @@
 import type { ImageInputType } from '../types/image'
 import { ConverterError, ERRORS } from './errors'
+import { readExifSummary } from './exifMetadata'
+import type { ExifSummary } from './exifTiff'
 
 const ALPHA_CAPABLE: ReadonlySet<ImageInputType> = new Set([
   'png',
@@ -24,7 +26,10 @@ export async function decodeToBitmap(file: File, inputFormat: ImageInputType): P
     return decodeTiff(file)
   }
   try {
-    return await createImageBitmap(file)
+    // Explicit rather than relying on the default: this used to be 'none' and
+    // is 'from-image' now, and the EXIF preservation path depends on knowing
+    // that the decoded pixels are already upright.
+    return await createImageBitmap(file, { imageOrientation: 'from-image' })
   } catch {
     return decodeViaImageElement(file)
   }
@@ -72,11 +77,15 @@ export type ProbeResult = {
   height: number
   hasTransparency: boolean
   thumbnailUrl?: string
+  metadata?: ExifSummary
 }
 
 // Decodes once to learn dimensions, sample transparency, and build a small
 // uniform PNG thumbnail (safe to display for every input, including SVG).
 export async function probeFile(file: File, inputFormat: ImageInputType): Promise<ProbeResult> {
+  // Started before the decode so the two overlap; it never rejects, so it can
+  // never turn a readable image into a failed one.
+  const metadataPromise = readExifSummary(file, inputFormat)
   const bitmap = await decodeToBitmap(file, inputFormat)
   try {
     const { width, height } = bitmap
@@ -87,7 +96,9 @@ export async function probeFile(file: File, inputFormat: ImageInputType): Promis
     canvas.width = thumbWidth
     canvas.height = thumbHeight
     const context = canvas.getContext('2d', { willReadFrequently: true })
-    if (!context) return { width, height, hasTransparency: false }
+    if (!context) {
+      return { width, height, hasTransparency: false, metadata: await metadataPromise }
+    }
     context.drawImage(bitmap, 0, 0, thumbWidth, thumbHeight)
 
     let hasTransparency = false
@@ -105,7 +116,7 @@ export async function probeFile(file: File, inputFormat: ImageInputType): Promis
       canvas.toBlob(resolve, 'image/png'),
     )
     const thumbnailUrl = thumbnailBlob ? URL.createObjectURL(thumbnailBlob) : undefined
-    return { width, height, hasTransparency, thumbnailUrl }
+    return { width, height, hasTransparency, thumbnailUrl, metadata: await metadataPromise }
   } finally {
     bitmap.close()
   }

@@ -35,55 +35,52 @@ export function ResizePanel({ value, onChange }: Props) {
   }
 
   return (
-    <fieldset className="control-block resize-panel">
-      <legend className="control-label">Resize</legend>
-      <div className="resize-modes">
+    <div className="settings-section">
+      <label className="control-label" htmlFor="resize-mode">
+        Resize
+      </label>
+      <select
+        id="resize-mode"
+        className="control-select"
+        value={value.mode}
+        onChange={(event) => onChange({ ...value, mode: event.target.value as ResizeMode })}
+      >
         {MODES.map((mode) => (
-          <label key={mode.value} className="radio-option">
-            <input
-              type="radio"
-              name="resize-mode"
-              value={mode.value}
-              checked={value.mode === mode.value}
-              onChange={() => onChange({ ...value, mode: mode.value })}
-            />
+          <option key={mode.value} value={mode.value}>
             {mode.label}
-          </label>
+          </option>
         ))}
-      </div>
+      </select>
       {value.mode !== 'original' && (
-        <label className="resize-dimension">
-          {dimensionLabel}
-          <input
-            type="number"
-            min={1}
-            max={MAX_DIMENSION}
-            placeholder="e.g. 1920"
-            value={dimensionValue ?? ''}
-            onChange={(event) => setDimension(event.target.value)}
-          />
-        </label>
+        <input
+          className="control-number"
+          type="number"
+          min={1}
+          max={MAX_DIMENSION}
+          placeholder={dimensionLabel}
+          aria-label={dimensionLabel}
+          value={dimensionValue ?? ''}
+          onChange={(event) => setDimension(event.target.value)}
+        />
       )}
-      <div className="resize-toggles">
-        <label className="checkbox-option">
-          <input
-            type="checkbox"
-            checked={value.preserveAspectRatio}
-            disabled={value.mode === 'original' || isMaxMode}
-            onChange={(event) => onChange({ ...value, preserveAspectRatio: event.target.checked })}
-          />
-          Preserve aspect ratio
-        </label>
-        <label className="checkbox-option">
-          <input
-            type="checkbox"
-            checked={value.preventUpscale}
-            disabled={value.mode === 'original' || isMaxMode}
-            onChange={(event) => onChange({ ...value, preventUpscale: event.target.checked })}
-          />
-          Do not enlarge smaller images
-        </label>
-      </div>
-    </fieldset>
+      <label className="checkbox-option">
+        <input
+          type="checkbox"
+          checked={value.preserveAspectRatio}
+          disabled={value.mode === 'original' || isMaxMode}
+          onChange={(event) => onChange({ ...value, preserveAspectRatio: event.target.checked })}
+        />
+        Preserve aspect ratio
+      </label>
+      <label className="checkbox-option">
+        <input
+          type="checkbox"
+          checked={value.preventUpscale}
+          disabled={value.mode === 'original' || isMaxMode}
+          onChange={(event) => onChange({ ...value, preventUpscale: event.target.checked })}
+        />
+        Never enlarge
+      </label>
+    </div>
   )
 }

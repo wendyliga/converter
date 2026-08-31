@@ -6,15 +6,16 @@ type Props = {
 
 export function QualitySlider({ value, disabled, onChange }: Props) {
   return (
-    <div className="control-block">
-      <label className="control-label" htmlFor="quality-slider">
+    <div className="settings-section">
+      <label className="control-label control-head" htmlFor="quality-slider">
         Quality
-        <output className="quality-value" htmlFor="quality-slider">
-          {disabled ? '—' : value}
+        <output className="control-value" htmlFor="quality-slider">
+          {disabled ? 'n/a' : value}
         </output>
       </label>
       <input
         id="quality-slider"
+        className="quality-range"
         type="range"
         min={1}
         max={100}
@@ -22,11 +23,7 @@ export function QualitySlider({ value, disabled, onChange }: Props) {
         disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
       />
-      <p className="control-note">
-        {disabled
-          ? 'PNG is lossless, so quality does not apply.'
-          : 'Lower quality produces smaller files.'}
-      </p>
+      {disabled && <p className="control-note">PNG is lossless.</p>}
     </div>
   )
 }
